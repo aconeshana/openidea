@@ -401,6 +401,10 @@ fn canonical_path(path: &Path) -> IdeResult<PathBuf> {
             std::path::Component::CurDir => {}
             _ => resolved.push(component),
         }
+        // A bare drive prefix such as `\\?\C:` names the volume device, which cannot be canonicalized.
+        if !resolved.has_root() {
+            continue;
+        }
         match dunce::canonicalize(&resolved) {
             Ok(path) => resolved = path,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound && fs::symlink_metadata(&resolved).is_err() => {}
